@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Dashboard de Posiciones SEO</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg: #f0f4f8;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --card: #ffffff;
+  --line: #e2e8f0;
+  --brand: #2563eb;
+  --brand-light: #3b82f6;
+  --green: #16a34a;
+  --green-light: #22c55e;
+  --red: #dc2626;
+  --red-light: #ef4444;
+  --yellow: #f59e0b;
+  --yellow-light: #fbbf24;
+  --purple: #8b5cf6;
+  --purple-light: #a78bfa;
+  --gold: #f59e0b;
+  --silver: #64748b;
+  --bronze: #d97706;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  --shadow-md: 0 4px 6px rgba(0,0,0,.1);
+  --shadow-lg: 0 10px 20px rgba(0,0,0,.15);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed;
+  color: var(--ink);
+  font: 14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+  min-height: 100vh;
+}
+.wrap{max-width: 1400px;margin: 0 auto;padding: 20px 16px 80px}
+.header-section{background: rgba(255,255,255,.95);backdrop-filter: blur(10px);border-radius: 20px;padding: 24px;margin-bottom: 20px;box-shadow: var(--shadow-lg)}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.between{justify-content:space-between;align-items:center}
+.title{display: flex;gap: 12px;align-items: center;font-weight: 800;font-size: 28px;color: var(--ink);letter-spacing: -0.5px}
+.title .emoji{font-size: 32px}
+.subtitle{color: var(--muted);font-size: 14px;margin-top: 8px;font-weight: 500}
+.btn{background: var(--card);border: 2px solid var(--line);color: var(--ink);padding: 10px 20px;border-radius: 12px;cursor: pointer;display: inline-flex;gap: 10px;align-items: center;font-weight: 700;font-size: 14px;transition: all .3s cubic-bezier(.4,0,.2,1);box-shadow: var(--shadow-sm)}
+.btn:hover{transform: translateY(-2px);box-shadow: var(--shadow-md);border-color: var(--brand)}
+.btn.primary{background: linear-gradient(135deg, var(--brand), var(--brand-light));border-color: var(--brand);color: white}
+.btn.primary:hover{transform: translateY(-2px) scale(1.02);box-shadow: 0 8px 16px rgba(37,99,235,.3)}
+input[type="file"]{display:none}
+.card{background: var(--card);border: 2px solid var(--line);border-radius: 20px;padding: 20px;box-shadow: var(--shadow-md);transition: all .3s;margin-bottom: 20px}
+.card:hover{box-shadow: var(--shadow-lg);transform: translateY(-2px)}
+.kpi{flex: 1;min-width: 280px;position: relative;overflow: hidden;background: linear-gradient(135deg, var(--card) 0%, #f8fafc 100%)}
+.kpi::before{content: '';position: absolute;top: 0;left: 0;width: 100%;height: 5px}
+.kpi.gold::before{background: linear-gradient(90deg, #f59e0b, #fbbf24)}
+.kpi.green::before{background: linear-gradient(90deg, var(--green), var(--green-light))}
+.kpi.blue::before{background: linear-gradient(90deg, var(--brand), var(--brand-light))}
+.kpi.yellow::before{background: linear-gradient(90deg, var(--yellow), var(--yellow-light))}
+.kpi h5{margin: 0 0 12px;color: var(--muted);font-weight: 800;font-size: 13px;text-transform: uppercase;letter-spacing: 1px}
+.kpi .big{font-size: 48px;font-weight: 900;line-height: 1;margin: 12px 0}
+.kpi.gold .big{background: linear-gradient(135deg, #f59e0b, #fbbf24);-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text}
+.kpi.green .big{background: linear-gradient(135deg, var(--green), var(--green-light));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text}
+.kpi.blue .big{background: linear-gradient(135deg, var(--brand), var(--brand-light));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text}
+.kpi.yellow .big{background: linear-gradient(135deg, var(--yellow), var(--yellow-light));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text}
+.kpi .label{color: var(--muted);font-size: 13px;font-weight: 600}
+.section-title{font-weight: 900;margin: 0 0 20px;font-size: 20px;color: var(--ink);display: flex;align-items: center;gap: 10px}
+.section-title .emoji{font-size: 24px}
+.table-container{overflow-x: auto;margin-top: 16px}
+.table{width: 100%;border-collapse: separate;border-spacing: 0;background: var(--card);border: 2px solid var(--line);border-radius: 16px;overflow: hidden}
+.table th,.table td{padding: 14px 18px;border-bottom: 1px solid var(--line);font-size: 14px}
+.table th{background: linear-gradient(135deg, #f8fafc, #f1f5f9);color: var(--ink);font-weight: 800;text-align: left;text-transform: uppercase;font-size: 12px;letter-spacing: 0.5px;position: sticky;top: 0;z-index: 10}
+.table tr:last-child td{border-bottom:0}
+.table tbody tr{transition: all .2s}
+.table tbody tr:hover{background: #f8fafc}
+.table tbody tr.top3{background: rgba(251,191,36,.15) !important;border-left: 4px solid var(--gold)}
+.table tbody tr.top5{background: rgba(139,92,246,.1) !important;border-left: 4px solid var(--silver)}
+.table tbody tr.top10{background: rgba(34,197,94,.1) !important;border-left: 4px solid var(--bronze)}
+.position-badge{display: inline-flex;align-items: center;justify-content: center;background: var(--card);border: 2px solid var(--line);border-radius: 8px;padding: 6px 12px;font-weight: 900;font-size: 16px;min-width: 50px}
+.position-badge.top3{background: linear-gradient(135deg, #fef3c7, #fde68a);border-color: var(--gold);color: #92400e}
+.position-badge.top5{background: linear-gradient(135deg, #e9d5ff, #ddd6fe);border-color: var(--silver);color: #5b21b6}
+.position-badge.top10{background: linear-gradient(135deg, #d1fae5, #a7f3d0);border-color: var(--bronze);color: #065f46}
+.keyword-cell{font-weight: 600;color: var(--ink);max-width: 400px}
+.url-cell{color: var(--muted);font-size: 12px;max-width: 300px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap}
+.chart-cell{background: var(--card);border: 2px solid var(--line);border-radius: 16px;padding: 24px;box-shadow: var(--shadow-sm);margin-bottom: 20px}
+.canvas-wrapper{width: 100%;height: 400px;position: relative}
+.empty-state{text-align: center;padding: 60px 20px;color: var(--muted)}
+.empty-state .emoji{font-size: 64px;margin-bottom: 20px;display: block}
+.empty-state h3{font-size: 20px;margin-bottom: 12px;color: var(--ink)}
+.drop-zone{cursor: pointer;transition: all .3s;border: 2px dashed var(--line) !important;background: var(--card) !important}
+.drop-zone:hover{border-color: var(--green) !important;background: #ecfdf5 !important;transform: translateY(-2px)}
+.drop-zone.drag-over{border-color: var(--green) !important;background: #d1fae5 !important;transform: scale(1.02);box-shadow: 0 0 0 4px rgba(22,163,74,.15)}
+.stats-grid{display: grid;grid-template-columns: repeat(auto-fit,minmax(200px,1fr));gap: 16px;margin-bottom: 24px}
+.stat-card{background: linear-gradient(135deg, #f8fafc, #ffffff);border: 2px solid var(--line);border-radius: 12px;padding: 20px;text-align: center}
+.stat-card .number{font-size: 32px;font-weight: 900;color: var(--brand);margin: 8px 0}
+.stat-card .label{font-size: 13px;font-weight: 700;color: var(--muted);text-transform: uppercase;letter-spacing: 0.5px}
+.opportunities-section{background: linear-gradient(135deg, #fef3c7, #fde68a);border: 2px solid var(--gold);border-radius: 16px;padding: 24px;margin-bottom: 20px}
+.opportunities-section .section-title{color: #92400e}
+.hidden{display:none}
+.loading{text-align: center;padding: 40px;color: var(--muted)}
+.loading::after{content: '...';animation: dots 1.5s infinite}
+@keyframes dots{0%, 20%{content: '.'}40%{content: '..'}60%, 100%{content: '...'}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Header -->
+  <div class="header-section">
+    <div class="row between">
+      <div>
+        <div class="title">
+          <span class="emoji">📊</span>
+          <span>Dashboard de Posiciones SEO</span>
+        </div>
+        <div class="subtitle">Análisis de posicionamiento en Google</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="emptyState" class="card drop-zone">
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
+    <div class="empty-state">
+      <span class="emoji">📥</span>
+      <h3>Arrastra tu archivo aquí o haz clic para cargar</h3>
+      <p>Soporta archivos CSV y Excel con datos de keywords y posiciones</p>
+      <button class="btn primary" style="margin-top: 20px" onclick="document.getElementById('fileInput').click()">
+        <span>📁</span>
+        <span>Seleccionar archivo</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content (hidden initially) -->
+  <div id="mainContent" class="hidden">
+    <!-- KPIs Section -->
+    <div class="row" style="margin-bottom: 24px">
+      <div class="card kpi gold">
+        <h5>🥇 Keywords en TOP 3</h5>
+        <div class="big" id="kpiTop3">0</div>
+        <div class="label">Posiciones 1-3</div>
+      </div>
+      <div class="card kpi green">
+        <h5>🥈 Keywords en TOP 5</h5>
+        <div class="big" id="kpiTop5">0</div>
+        <div class="label">Posiciones 1-5</div>
+      </div>
+      <div class="card kpi blue">
+        <h5>🥉 Keywords en TOP 10</h5>
+        <div class="big" id="kpiTop10">0</div>
+        <div class="label">Posiciones 1-10</div>
+      </div>
+      <div class="card kpi yellow">
+        <h5>📈 Total Keywords</h5>
+        <div class="big" id="kpiTotal">0</div>
+        <div class="label">En seguimiento</div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Posición Promedio</div>
+        <div class="number" id="avgPosition">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Mejor Posición</div>
+        <div class="number" id="bestPosition">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Keywords en Primera Página</div>
+        <div class="number" id="firstPageCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Volumen Total (TOP 10)</div>
+        <div class="number" id="volumeTop10">0</div>
+      </div>
+    </div>
+
+    <!-- Opportunities Section -->
+    <div id="opportunitiesSection" class="opportunities-section hidden">
+      <div class="section-title">
+        <span class="emoji">💡</span>
+        <span>Oportunidades Cercanas al TOP 10</span>
+      </div>
+      <p style="margin-bottom: 16px; color: #92400e; font-weight: 600">
+        Keywords en posiciones 11-15 que con un poco de esfuerzo pueden entrar al TOP 10
+      </p>
+      <div id="opportunitiesList"></div>
+    </div>
+
+    <!-- Distribution Chart -->
+    <div class="card chart-cell">
+      <div class="section-title">
+        <span class="emoji">📊</span>
+        <span>Distribución de Posiciones</span>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="distributionChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Keywords Table -->
+    <div class="card">
+      <div class="section-title">
+        <span class="emoji">🔍</span>
+        <span>Todas las Keywords por Posición</span>
+      </div>
+      <div class="table-container">
+        <table class="table" id="keywordsTable">
+          <thead>
+            <tr>
+              <th>Posición</th>
+              <th>Keyword</th>
+              <th>Volumen</th>
+              <th>Tráfico Estimado</th>
+              <th>URL</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let globalData = [];
+let distributionChart = null;
+
+// File input handler
+document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+
+// Drag and drop for empty state
+const emptyState = document.getElementById('emptyState');
+
+emptyState.addEventListener('click', function() {
+  document.getElementById('fileInput').click();
+});
+
+emptyState.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  emptyState.classList.add('drag-over');
+});
+
+emptyState.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  emptyState.classList.remove('drag-over');
+});
+
+emptyState.addEventListener('drop', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  emptyState.classList.remove('drag-over');
+  
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handleFile(files[0]);
+  }
+});
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+}
+
+function handleFile(file) {
+
+  const fileName = file.name.toLowerCase();
+  
+  if (fileName.endsWith('.csv')) {
+    Papa.parse(file, {
+      header: true,
+      encoding: 'UTF-16LE',
+      skipEmptyLines: true,
+      complete: function(results) {
+        processData(results.data);
+      },
+      error: function(error) {
+        alert('Error al leer el archivo CSV: ' + error.message);
+      }
+    });
+  } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type: 'array'});
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+        processData(jsonData);
+      } catch(error) {
+        alert('Error al leer el archivo Excel: ' + error.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function processData(data) {
+  // Clean and prepare data
+  globalData = data
+    .map(row => {
+      // Handle both possible column name formats
+      const position = parseInt(row['Current position'] || row['Posición actual'] || row.Position || 0);
+      const keyword = row['Keyword'] || row['Palabra clave'] || '';
+      const volume = parseInt(row['Volume'] || row['Volumen'] || 0);
+      const traffic = parseInt(row['Organic traffic'] || row['Tráfico orgánico'] || 0);
+      const url = row['Current URL'] || row['URL actual'] || '';
+      
+      return {
+        keyword: keyword,
+        position: position,
+        volume: volume,
+        traffic: traffic,
+        url: url
+      };
+    })
+    .filter(row => row.keyword && row.position > 0)
+    .sort((a, b) => a.position - b.position);
+
+  if (globalData.length === 0) {
+    alert('No se encontraron datos válidos en el archivo. Verifica que tenga las columnas correctas.');
+    return;
+  }
+
+  // Hide empty state, show content
+  document.getElementById('emptyState').classList.add('hidden');
+  document.getElementById('mainContent').classList.remove('hidden');
+
+  // Update all visualizations
+  updateKPIs();
+  updateStatsGrid();
+  updateOpportunities();
+  updateDistributionChart();
+  updateTable();
+}
+
+function updateKPIs() {
+  const top3 = globalData.filter(k => k.position <= 3).length;
+  const top5 = globalData.filter(k => k.position <= 5).length;
+  const top10 = globalData.filter(k => k.position <= 10).length;
+  const total = globalData.length;
+
+  document.getElementById('kpiTop3').textContent = top3;
+  document.getElementById('kpiTop5').textContent = top5;
+  document.getElementById('kpiTop10').textContent = top10;
+  document.getElementById('kpiTotal').textContent = total;
+}
+
+function updateStatsGrid() {
+  // Average position
+  const avgPos = globalData.reduce((sum, k) => sum + k.position, 0) / globalData.length;
+  document.getElementById('avgPosition').textContent = avgPos.toFixed(1);
+
+  // Best position
+  const bestPos = Math.min(...globalData.map(k => k.position));
+  document.getElementById('bestPosition').textContent = bestPos;
+
+  // First page count (1-10)
+  const firstPage = globalData.filter(k => k.position <= 10).length;
+  document.getElementById('firstPageCount').textContent = firstPage;
+
+  // Volume in TOP 10
+  const volumeTop10 = globalData
+    .filter(k => k.position <= 10)
+    .reduce((sum, k) => sum + k.volume, 0);
+  document.getElementById('volumeTop10').textContent = formatNumber(volumeTop10);
+}
+
+function updateOpportunities() {
+  const opportunities = globalData.filter(k => k.position >= 11 && k.position <= 15);
+  
+  if (opportunities.length === 0) {
+    document.getElementById('opportunitiesSection').classList.add('hidden');
+    return;
+  }
+
+  document.getElementById('opportunitiesSection').classList.remove('hidden');
+  
+  const html = `
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Posición</th>
+          <th>Keyword</th>
+          <th>Volumen</th>
+          <th>Diferencia al TOP 10</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${opportunities.map(k => `
+          <tr>
+            <td><span class="position-badge">${k.position}</span></td>
+            <td class="keyword-cell">${k.keyword}</td>
+            <td>${formatNumber(k.volume)}</td>
+            <td style="font-weight: 700; color: var(--yellow)">-${k.position - 10} posiciones</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  
+  document.getElementById('opportunitiesList').innerHTML = html;
+}
+
+function updateDistributionChart() {
+  // Group by position ranges
+  const ranges = {
+    '1-3': globalData.filter(k => k.position <= 3).length,
+    '4-5': globalData.filter(k => k.position >= 4 && k.position <= 5).length,
+    '6-10': globalData.filter(k => k.position >= 6 && k.position <= 10).length,
+    '11-20': globalData.filter(k => k.position >= 11 && k.position <= 20).length,
+    '21-50': globalData.filter(k => k.position >= 21 && k.position <= 50).length,
+    '51+': globalData.filter(k => k.position > 50).length
+  };
+
+  const ctx = document.getElementById('distributionChart').getContext('2d');
+  
+  if (distributionChart) {
+    distributionChart.destroy();
+  }
+
+  distributionChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(ranges),
+      datasets: [{
+        label: 'Cantidad de Keywords',
+        data: Object.values(ranges),
+        backgroundColor: [
+          'rgba(251, 191, 36, 0.8)',  // Gold for 1-3
+          'rgba(139, 92, 246, 0.8)',  // Purple for 4-5
+          'rgba(34, 197, 94, 0.8)',   // Green for 6-10
+          'rgba(37, 99, 235, 0.8)',   // Blue for 11-20
+          'rgba(245, 158, 11, 0.8)',  // Orange for 21-50
+          'rgba(100, 116, 139, 0.8)'  // Gray for 51+
+        ],
+        borderColor: [
+          'rgb(251, 191, 36)',
+          'rgb(139, 92, 246)',
+          'rgb(34, 197, 94)',
+          'rgb(37, 99, 235)',
+          'rgb(245, 158, 11)',
+          'rgb(100, 116, 139)'
+        ],
+        borderWidth: 2,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          padding: 12,
+          titleFont: {
+            size: 14,
+            weight: 'bold'
+          },
+          bodyFont: {
+            size: 13
+          },
+          borderColor: 'rgba(226, 232, 240, 0.2)',
+          borderWidth: 1,
+          callbacks: {
+            label: function(context) {
+              const total = globalData.length;
+              const value = context.parsed.y;
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${value} keywords (${percentage}%)`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+            font: {
+              size: 12,
+              weight: '600'
+            }
+          },
+          grid: {
+            color: 'rgba(226, 232, 240, 0.5)'
+          }
+        },
+        x: {
+          ticks: {
+            font: {
+              size: 13,
+              weight: '700'
+            }
+          },
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateTable() {
+  const tbody = document.getElementById('tableBody');
+  
+  const html = globalData.map(k => {
+    let rowClass = '';
+    let badgeClass = '';
+    
+    if (k.position <= 3) {
+      rowClass = 'top3';
+      badgeClass = 'top3';
+    } else if (k.position <= 5) {
+      rowClass = 'top5';
+      badgeClass = 'top5';
+    } else if (k.position <= 10) {
+      rowClass = 'top10';
+      badgeClass = 'top10';
+    }
+    
+    return `
+      <tr class="${rowClass}">
+        <td><span class="position-badge ${badgeClass}">${k.position}</span></td>
+        <td class="keyword-cell">${k.keyword}</td>
+        <td>${formatNumber(k.volume)}</td>
+        <td>${formatNumber(k.traffic)}</td>
+        <td class="url-cell" title="${k.url}">${k.url}</td>
+      </tr>
+    `;
+  }).join('');
+  
+  tbody.innerHTML = html;
+}
+
+function formatNumber(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
+}
+</script>
+</body>
+</html>
