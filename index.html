@@ -38,7 +38,13 @@ body{
   color: var(--ink);
   font: 14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
   min-height: 100vh;
+  padding-top: 60px;
 }
+.sticky-nav{position: fixed;top: 0;left: 0;right: 0;background: rgba(255,255,255,.98);backdrop-filter: blur(10px);border-bottom: 2px solid var(--line);padding: 12px 20px;z-index: 1000;box-shadow: var(--shadow-md);display: none}
+.sticky-nav.show{display: block}
+.nav-links{display: flex;gap: 16px;max-width: 1400px;margin: 0 auto;flex-wrap: wrap;justify-content: center}
+.nav-link{padding: 8px 16px;background: var(--card);border: 2px solid var(--line);border-radius: 8px;font-weight: 700;font-size: 13px;color: var(--ink);cursor: pointer;transition: all .3s;text-decoration: none}
+.nav-link:hover{background: var(--brand);color: white;border-color: var(--brand);transform: translateY(-2px)}
 .wrap{max-width: 1400px;margin: 0 auto;padding: 20px 16px 80px}
 .header-section{background: rgba(255,255,255,.95);backdrop-filter: blur(10px);border-radius: 20px;padding: 24px;margin-bottom: 20px;box-shadow: var(--shadow-lg)}
 .row{display:flex;gap:16px;flex-wrap:wrap}
@@ -111,9 +117,23 @@ input[type="file"]{display:none}
 .info-box p:last-child{margin: 0}
 .info-box strong{color: var(--brand);font-weight: 700}
 @keyframes slideDown{from{opacity: 0;transform: translateY(-10px)}to{opacity: 1;transform: translateY(0)}}
+.show-more-btn{background: linear-gradient(135deg, var(--brand), var(--brand-light));color: white;border: none;padding: 12px 24px;border-radius: 10px;font-weight: 700;font-size: 14px;cursor: pointer;margin: 16px auto 0;display: block;transition: all .3s;box-shadow: var(--shadow-sm)}
+.show-more-btn:hover{transform: translateY(-2px);box-shadow: var(--shadow-md)}
+.table-row-hidden{display: none}
 </style>
 </head>
 <body>
+<!-- Sticky Navigation -->
+<nav id="stickyNav" class="sticky-nav">
+  <div class="nav-links">
+    <a class="nav-link" onclick="scrollToSection('kpis')">📊 KPIs</a>
+    <a class="nav-link" onclick="scrollToSection('stats')">📈 Indicadores</a>
+    <a class="nav-link" onclick="scrollToSection('opportunities')">💡 Oportunidades</a>
+    <a class="nav-link" onclick="scrollToSection('distribution')">📊 Distribución</a>
+    <a class="nav-link" onclick="scrollToSection('keywords')">🔍 Keywords</a>
+  </div>
+</nav>
+
 <div class="wrap">
   <!-- Header -->
   <div class="header-section">
@@ -146,7 +166,7 @@ input[type="file"]{display:none}
   <div id="mainContent" class="hidden">
     
     <!-- KPIs Info Section -->
-    <div class="card" style="margin-bottom: 16px">
+    <div id="kpis" class="card" style="margin-bottom: 16px; scroll-margin-top: 80px">
       <div class="section-title">
         <span class="emoji">📊</span>
         <span>Métricas Clave de Posicionamiento</span>
@@ -184,7 +204,7 @@ input[type="file"]{display:none}
     </div>
 
     <!-- Stats Grid -->
-    <div class="card" style="margin-bottom: 16px">
+    <div id="stats" class="card" style="margin-bottom: 16px; scroll-margin-top: 80px">
       <div class="section-title" style="font-size: 16px">
         <span class="emoji">📈</span>
         <span>Indicadores de Rendimiento</span>
@@ -217,7 +237,7 @@ input[type="file"]{display:none}
     </div>
 
     <!-- Opportunities Section -->
-    <div id="opportunitiesSection" class="opportunities-section hidden">
+    <div id="opportunities" class="opportunities-section hidden" style="scroll-margin-top: 80px">
       <div class="section-title">
         <span class="emoji">💡</span>
         <span>Oportunidades Cercanas al TOP 10</span>
@@ -236,7 +256,7 @@ input[type="file"]{display:none}
     </div>
 
     <!-- Distribution Chart -->
-    <div class="card chart-cell">
+    <div id="distribution" class="card chart-cell" style="scroll-margin-top: 80px">
       <div class="section-title">
         <span class="emoji">📊</span>
         <span>Distribución de Posiciones</span>
@@ -254,7 +274,7 @@ input[type="file"]{display:none}
     </div>
 
     <!-- Keywords Table -->
-    <div class="card">
+    <div id="keywords" class="card" style="scroll-margin-top: 80px">
       <div class="section-title">
         <span class="emoji">🔍</span>
         <span>Todas las Keywords por Posición</span>
@@ -282,6 +302,7 @@ input[type="file"]{display:none}
           <tbody id="tableBody">
           </tbody>
         </table>
+        <div id="showMoreKeywords"></div>
       </div>
     </div>
   </div>
@@ -290,6 +311,28 @@ input[type="file"]{display:none}
 <script>
 let globalData = [];
 let distributionChart = null;
+
+// Scroll to section
+function scrollToSection(id) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Show sticky nav on scroll
+window.addEventListener('scroll', function() {
+  const stickyNav = document.getElementById('stickyNav');
+  const mainContent = document.getElementById('mainContent');
+  
+  if (mainContent && !mainContent.classList.contains('hidden')) {
+    if (window.scrollY > 300) {
+      stickyNav.classList.add('show');
+    } else {
+      stickyNav.classList.remove('show');
+    }
+  }
+});
 
 // Toggle info boxes
 function toggleInfo(id) {
@@ -443,11 +486,14 @@ function updateOpportunities() {
   const opportunities = globalData.filter(k => k.position >= 11 && k.position <= 15);
   
   if (opportunities.length === 0) {
-    document.getElementById('opportunitiesSection').classList.add('hidden');
+    document.getElementById('opportunities').classList.add('hidden');
     return;
   }
 
-  document.getElementById('opportunitiesSection').classList.remove('hidden');
+  document.getElementById('opportunities').classList.remove('hidden');
+  
+  const limitRows = 5;
+  const showAll = opportunities.length <= limitRows;
   
   const html = `
     <table class="table">
@@ -459,9 +505,9 @@ function updateOpportunities() {
           <th>Diferencia al TOP 10</th>
         </tr>
       </thead>
-      <tbody>
-        ${opportunities.map(k => `
-          <tr>
+      <tbody id="oppTableBody">
+        ${opportunities.map((k, index) => `
+          <tr class="${index >= limitRows ? 'table-row-hidden' : ''}" data-row-index="${index}">
             <td><span class="position-badge">${k.position}</span></td>
             <td class="keyword-cell">${k.keyword}</td>
             <td>${formatNumber(k.volume)}</td>
@@ -470,6 +516,7 @@ function updateOpportunities() {
         `).join('')}
       </tbody>
     </table>
+    ${!showAll ? `<button class="show-more-btn" onclick="showAllRows('oppTableBody', ${opportunities.length})">Ver todas las ${opportunities.length} oportunidades ▼</button>` : ''}
   `;
   
   document.getElementById('opportunitiesList').innerHTML = html;
@@ -580,8 +627,11 @@ function updateDistributionChart() {
 
 function updateTable() {
   const tbody = document.getElementById('tableBody');
+  const showMoreContainer = document.getElementById('showMoreKeywords');
+  const limitRows = 10;
+  const showAll = globalData.length <= limitRows;
   
-  const html = globalData.map(k => {
+  const html = globalData.map((k, index) => {
     let rowClass = '';
     let badgeClass = '';
     
@@ -597,7 +647,7 @@ function updateTable() {
     }
     
     return `
-      <tr class="${rowClass}">
+      <tr class="${rowClass} ${index >= limitRows ? 'table-row-hidden' : ''}" data-row-index="${index}">
         <td><span class="position-badge ${badgeClass}">${k.position}</span></td>
         <td class="keyword-cell">${k.keyword}</td>
         <td>${formatNumber(k.volume)}</td>
@@ -608,6 +658,13 @@ function updateTable() {
   }).join('');
   
   tbody.innerHTML = html;
+  
+  // Add "Show more" button if needed
+  if (!showAll) {
+    showMoreContainer.innerHTML = `<button class="show-more-btn" onclick="showAllRows('tableBody', ${globalData.length})">Ver todas las ${globalData.length} keywords ▼</button>`;
+  } else {
+    showMoreContainer.innerHTML = '';
+  }
 }
 
 function formatNumber(num) {
@@ -615,8 +672,23 @@ function formatNumber(num) {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
   return num.toString();
 }
+
+function showAllRows(tbodyId, totalRows) {
+  const tbody = document.getElementById(tbodyId);
+  const hiddenRows = tbody.querySelectorAll('.table-row-hidden');
+  
+  hiddenRows.forEach(row => {
+    row.classList.remove('table-row-hidden');
+  });
+  
+  // Remove the button
+  const btn = event.target;
+  if (btn.parentElement.id === 'showMoreKeywords') {
+    document.getElementById('showMoreKeywords').innerHTML = '';
+  } else {
+    btn.parentElement.remove();
+  }
+}
 </script>
-</body>
-</html>
 </body>
 </html>
