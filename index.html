@@ -102,6 +102,15 @@ input[type="file"]{display:none}
 .loading{text-align: center;padding: 40px;color: var(--muted)}
 .loading::after{content: '...';animation: dots 1.5s infinite}
 @keyframes dots{0%, 20%{content: '.'}40%{content: '..'}60%, 100%{content: '...'}}
+.info-toggle{display: inline-flex;align-items: center;justify-content: center;width: 24px;height: 24px;border-radius: 50%;background: var(--brand);color: white;font-size: 14px;font-weight: 700;cursor: pointer;margin-left: 8px;transition: all .3s;border: none}
+.info-toggle:hover{background: var(--brand-light);transform: scale(1.1)}
+.info-box{background: linear-gradient(135deg, #eff6ff, #dbeafe);border: 2px solid var(--brand);border-radius: 12px;padding: 16px 20px;margin-top: 12px;display: none;animation: slideDown .3s ease-out}
+.info-box.show{display: block}
+.info-box h6{font-weight: 800;color: var(--brand);margin: 0 0 8px;font-size: 13px;text-transform: uppercase;letter-spacing: 0.5px}
+.info-box p{margin: 0 0 8px;color: var(--ink);font-size: 13px;line-height: 1.6}
+.info-box p:last-child{margin: 0}
+.info-box strong{color: var(--brand);font-weight: 700}
+@keyframes slideDown{from{opacity: 0;transform: translateY(-10px)}to{opacity: 1;transform: translateY(0)}}
 </style>
 </head>
 <body>
@@ -135,6 +144,21 @@ input[type="file"]{display:none}
 
   <!-- Main Content (hidden initially) -->
   <div id="mainContent" class="hidden">
+    
+    <!-- KPIs Info Section -->
+    <div class="card" style="margin-bottom: 16px">
+      <div class="section-title">
+        <span class="emoji">📊</span>
+        <span>Métricas Clave de Posicionamiento</span>
+        <button class="info-toggle" onclick="toggleInfo('kpiInfo')">i</button>
+      </div>
+      <div id="kpiInfo" class="info-box">
+        <h6>¿Qué son estas métricas?</h6>
+        <p>Estas métricas muestran cuántas keywords están posicionadas en los rangos más valiosos de Google. Las primeras posiciones generan exponencialmente más tráfico que las posiciones inferiores.</p>
+        <p><strong>Qué ponderar:</strong> Un portfolio saludable debe tener al menos 20-30% de keywords en TOP 10. Si tenés muchas keywords en posiciones 11-20, hay oportunidades claras de mejora con poco esfuerzo.</p>
+      </div>
+    </div>
+
     <!-- KPIs Section -->
     <div class="row" style="margin-bottom: 24px">
       <div class="card kpi gold">
@@ -160,6 +184,19 @@ input[type="file"]{display:none}
     </div>
 
     <!-- Stats Grid -->
+    <div class="card" style="margin-bottom: 16px">
+      <div class="section-title" style="font-size: 16px">
+        <span class="emoji">📈</span>
+        <span>Indicadores de Rendimiento</span>
+        <button class="info-toggle" onclick="toggleInfo('statsInfo')">i</button>
+      </div>
+      <div id="statsInfo" class="info-box">
+        <h6>¿Cómo interpretar estos números?</h6>
+        <p><strong>Posición Promedio:</strong> Indica tu visibilidad general. Idealmente debería ser menor a 15. Si es mayor a 20, necesitás una estrategia de contenido más agresiva.</p>
+        <p><strong>Keywords en Primera Página:</strong> Solo la primera página de Google genera tráfico significativo. Este número debería crecer mes a mes.</p>
+        <p><strong>Volumen Total (TOP 10):</strong> Representa el potencial de tráfico mensual de tus keywords mejor posicionadas. Este es el tráfico "ganado" de tu estrategia SEO.</p>
+      </div>
+    </div>
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">Posición Promedio</div>
@@ -184,6 +221,13 @@ input[type="file"]{display:none}
       <div class="section-title">
         <span class="emoji">💡</span>
         <span>Oportunidades Cercanas al TOP 10</span>
+        <button class="info-toggle" style="background: #92400e" onclick="toggleInfo('oppInfo')">i</button>
+      </div>
+      <div id="oppInfo" class="info-box" style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #92400e">
+        <h6 style="color: #92400e">🎯 Tu lista de acción prioritaria</h6>
+        <p>Estas keywords están a solo 1-5 posiciones de entrar al TOP 10. Son las oportunidades de <strong>mayor retorno con menor esfuerzo</strong>.</p>
+        <p><strong>Acción recomendada:</strong> Optimizá el contenido de estas URLs, mejorá enlaces internos hacia ellas, y considerá actualizar el contenido para hacerlo más completo que la competencia inmediata.</p>
+        <p><strong>Impacto esperado:</strong> Mejorar estas posiciones puede incrementar el tráfico orgánico entre 30-50% en 2-3 meses.</p>
       </div>
       <p style="margin-bottom: 16px; color: #92400e; font-weight: 600">
         Keywords en posiciones 11-15 que con un poco de esfuerzo pueden entrar al TOP 10
@@ -196,6 +240,13 @@ input[type="file"]{display:none}
       <div class="section-title">
         <span class="emoji">📊</span>
         <span>Distribución de Posiciones</span>
+        <button class="info-toggle" onclick="toggleInfo('chartInfo')">i</button>
+      </div>
+      <div id="chartInfo" class="info-box">
+        <h6>¿Qué te dice este gráfico?</h6>
+        <p>Muestra cómo se distribuyen tus keywords en diferentes rangos de posición. Una estrategia SEO saludable debería mostrar una distribución tipo "pirámide" con más keywords en posiciones altas.</p>
+        <p><strong>Qué buscar:</strong> Si la mayoría de tus keywords están en posiciones 21+, necesitás mejorar la autoridad del sitio y la calidad del contenido. Si tenés muchas en 11-20, estás cerca de resultados significativos con optimizaciones puntuales.</p>
+        <p><strong>Objetivo:</strong> Mes a mes, deberías ver más keywords moviéndose hacia la izquierda del gráfico (posiciones mejores).</p>
       </div>
       <div class="canvas-wrapper">
         <canvas id="distributionChart"></canvas>
@@ -207,6 +258,15 @@ input[type="file"]{display:none}
       <div class="section-title">
         <span class="emoji">🔍</span>
         <span>Todas las Keywords por Posición</span>
+        <button class="info-toggle" onclick="toggleInfo('tableInfo')">i</button>
+      </div>
+      <div id="tableInfo" class="info-box">
+        <h6>Cómo usar esta tabla</h6>
+        <p>Listado completo de todas las keywords ordenadas por posición actual. Los colores indican el nivel de visibilidad:</p>
+        <p><strong>🥇 Dorado (TOP 3):</strong> Keywords de alto valor. Protegé estas posiciones con contenido actualizado y enlaces de calidad.</p>
+        <p><strong>🥈 Púrpura (TOP 5):</strong> Excelente visibilidad. Pequeñas mejoras pueden llevarlas al podio.</p>
+        <p><strong>🥉 Verde (TOP 10):</strong> Primera página de Google. Monitoreá la competencia y mantené el contenido relevante.</p>
+        <p><strong>Acción:</strong> Exportá esta data mensualmente para trackear cambios y priorizar optimizaciones.</p>
       </div>
       <div class="table-container">
         <table class="table" id="keywordsTable">
@@ -230,6 +290,12 @@ input[type="file"]{display:none}
 <script>
 let globalData = [];
 let distributionChart = null;
+
+// Toggle info boxes
+function toggleInfo(id) {
+  const infoBox = document.getElementById(id);
+  infoBox.classList.toggle('show');
+}
 
 // File input handler
 document.getElementById('fileInput').addEventListener('change', handleFileUpload);
@@ -550,5 +616,7 @@ function formatNumber(num) {
   return num.toString();
 }
 </script>
+</body>
+</html>
 </body>
 </html>
