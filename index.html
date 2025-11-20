@@ -207,6 +207,9 @@ input[type="file"]{display:none}
 </nav>
 
 <div class="wrap">
+  <!-- File Input (hidden, outside empty state) -->
+  <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
+  
   <!-- Header -->
   <div class="header-section">
     <div class="row between">
@@ -240,6 +243,16 @@ input[type="file"]{display:none}
             </select>
             <span class="select-arrow">▼</span>
           </div>
+          
+          <span class="theme-label" style="margin-left: 24px">Idioma:</span>
+          <div class="select-wrapper">
+            <select id="langSelect" class="custom-select" onchange="changeLang(this.value)">
+              <option value="es">Español</option>
+              <option value="en">English</option>
+              <option value="pt">Português</option>
+            </select>
+            <span class="select-arrow">▼</span>
+          </div>
         </div>
       </div>
     </div>
@@ -247,7 +260,6 @@ input[type="file"]{display:none}
 
   <!-- Empty State -->
   <div id="emptyState" class="card drop-zone">
-    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
     <div class="empty-state">
       <span class="emoji">📥</span>
       <h3>Arrastra tu archivo aquí o haz clic para cargar</h3>
@@ -408,6 +420,429 @@ input[type="file"]{display:none}
 <script>
 let globalData = [];
 let distributionChart = null;
+let currentLang = 'es';
+
+// Translations
+const translations = {
+  es: {
+    title: 'Dashboard de Posiciones SEO',
+    subtitle: 'Análisis de posicionamiento en Google',
+    themeLabel: 'Tema:',
+    fontLabel: 'Fuente:',
+    langLabel: 'Idioma:',
+    themes: {
+      default: 'Azul Corporativo',
+      gray: 'Gris Profesional',
+      finance: 'Verde Financiero',
+      executive: 'Púrpura Ejecutivo',
+      dark: 'Oscuro Tech'
+    },
+    emptyTitle: 'Arrastra tu archivo aquí o haz clic para cargar',
+    emptyDesc: 'Soporta archivos CSV y Excel con datos de keywords y posiciones',
+    selectFile: 'Seleccionar archivo',
+    errorCsv: 'Error al leer el archivo CSV',
+    errorExcel: 'Error al leer el archivo Excel',
+    errorFormat: 'Formato de archivo no soportado. Por favor sube un archivo CSV o Excel.',
+    errorNoData: 'No se encontraron datos válidos en el archivo. Verifica que tenga las columnas correctas.',
+    navKpis: '📊 KPIs',
+    navStats: '📈 Indicadores',
+    navOpp: '💡 Oportunidades',
+    navDist: '📊 Distribución',
+    navKeywords: '🔍 Keywords',
+    kpiSection: 'Métricas Clave de Posicionamiento',
+    kpiInfoTitle: '¿Qué son estas métricas?',
+    kpiInfoDesc1: 'Estas métricas muestran cuántas keywords están posicionadas en los rangos más valiosos de Google. Las primeras posiciones generan exponencialmente más tráfico que las posiciones inferiores.',
+    kpiInfoDesc2: 'Qué ponderar:',
+    kpiInfoDesc2b: ' Un portfolio saludable debe tener al menos 20-30% de keywords en TOP 10. Si tenés muchas keywords en posiciones 11-20, hay oportunidades claras de mejora con poco esfuerzo.',
+    top3Label: '🥇 Keywords en TOP 3',
+    top3Sub: 'Posiciones 1-3',
+    top5Label: '🥈 Keywords en TOP 5',
+    top5Sub: 'Posiciones 1-5',
+    top10Label: '🥉 Keywords en TOP 10',
+    top10Sub: 'Posiciones 1-10',
+    totalLabel: '📈 Total Keywords',
+    totalSub: 'En seguimiento',
+    statsSection: 'Indicadores de Rendimiento',
+    statsInfoTitle: '¿Cómo interpretar estos números?',
+    statsInfoDesc1: 'Posición Promedio:',
+    statsInfoDesc1b: ' Indica tu visibilidad general. Idealmente debería ser menor a 15. Si es mayor a 20, necesitás una estrategia de contenido más agresiva.',
+    statsInfoDesc2: 'Keywords en Primera Página:',
+    statsInfoDesc2b: ' Solo la primera página de Google genera tráfico significativo. Este número debería crecer mes a mes.',
+    statsInfoDesc3: 'Volumen Total (TOP 10):',
+    statsInfoDesc3b: ' Representa el potencial de tráfico mensual de tus keywords mejor posicionadas. Este es el tráfico "ganado" de tu estrategia SEO.',
+    avgPosLabel: 'Posición Promedio',
+    bestPosLabel: 'Mejor Posición',
+    firstPageLabel: 'Keywords en Primera Página',
+    volumeTop10Label: 'Volumen Total (TOP 10)',
+    oppSection: 'Oportunidades Cercanas al TOP 10',
+    oppInfoTitle: '🎯 Tu lista de acción prioritaria',
+    oppInfoDesc1: 'Estas keywords están a solo 1-5 posiciones de entrar al TOP 10. Son las oportunidades de mayor retorno con menor esfuerzo.',
+    oppInfoDesc2: 'Acción recomendada:',
+    oppInfoDesc2b: ' Optimizá el contenido de estas URLs, mejorá enlaces internos hacia ellas, y considerá actualizar el contenido para hacerlo más completo que la competencia inmediata.',
+    oppInfoDesc3: 'Impacto esperado:',
+    oppInfoDesc3b: ' Mejorar estas posiciones puede incrementar el tráfico orgánico entre 30-50% en 2-3 meses.',
+    oppDesc: 'Keywords en posiciones 11-15 que con un poco de esfuerzo pueden entrar al TOP 10',
+    oppTablePos: 'Posición',
+    oppTableKw: 'Keyword',
+    oppTableVol: 'Volumen',
+    oppTableDiff: 'Diferencia al TOP 10',
+    oppTableDiffVal: 'posiciones',
+    distSection: 'Distribución de Posiciones',
+    distInfoTitle: '¿Qué te dice este gráfico?',
+    distInfoDesc1: 'Muestra cómo se distribuyen tus keywords en diferentes rangos de posición. Una estrategia SEO saludable debería mostrar una distribución tipo "pirámide" con más keywords en posiciones altas.',
+    distInfoDesc2: 'Qué buscar:',
+    distInfoDesc2b: ' Si la mayoría de tus keywords están en posiciones 21+, necesitás mejorar la autoridad del sitio y la calidad del contenido. Si tenés muchas en 11-20, estás cerca de resultados significativos con optimizaciones puntuales.',
+    distInfoDesc3: 'Objetivo:',
+    distInfoDesc3b: ' Mes a mes, deberías ver más keywords moviéndose hacia la izquierda del gráfico (posiciones mejores).',
+    kwSection: 'Todas las Keywords por Posición',
+    kwInfoTitle: 'Cómo usar esta tabla',
+    kwInfoDesc1: 'Listado completo de todas las keywords ordenadas por posición actual. Los colores indican el nivel de visibilidad:',
+    kwInfoDesc2: '🥇 Dorado (TOP 3):',
+    kwInfoDesc2b: ' Keywords de alto valor. Protegé estas posiciones con contenido actualizado y enlaces de calidad.',
+    kwInfoDesc3: '🥈 Púrpura (TOP 5):',
+    kwInfoDesc3b: ' Excelente visibilidad. Pequeñas mejoras pueden llevarlas al podio.',
+    kwInfoDesc4: '🥉 Verde (TOP 10):',
+    kwInfoDesc4b: ' Primera página de Google. Monitoreá la competencia y mantené el contenido relevante.',
+    kwInfoDesc5: 'Acción:',
+    kwInfoDesc5b: ' Exportá esta data mensualmente para trackear cambios y priorizar optimizaciones.',
+    kwTablePos: 'Posición',
+    kwTableKw: 'Keyword',
+    kwTableVol: 'Volumen',
+    kwTableTraffic: 'Tráfico Estimado',
+    kwTableUrl: 'URL',
+    showAll: 'Ver todas las',
+    showAllOpp: 'oportunidades',
+    showAllKw: 'keywords',
+    chartLabel: 'Cantidad de Keywords'
+  },
+  en: {
+    title: 'SEO Rankings Dashboard',
+    subtitle: 'Google positioning analysis',
+    themeLabel: 'Theme:',
+    fontLabel: 'Font:',
+    langLabel: 'Language:',
+    themes: {
+      default: 'Corporate Blue',
+      gray: 'Professional Gray',
+      finance: 'Finance Green',
+      executive: 'Executive Purple',
+      dark: 'Tech Dark'
+    },
+    emptyTitle: 'Drag your file here or click to upload',
+    emptyDesc: 'Supports CSV and Excel files with keyword and position data',
+    selectFile: 'Select file',
+    errorCsv: 'Error reading CSV file',
+    errorExcel: 'Error reading Excel file',
+    errorFormat: 'Unsupported file format. Please upload a CSV or Excel file.',
+    errorNoData: 'No valid data found in the file. Check that it has the correct columns.',
+    navKpis: '📊 KPIs',
+    navStats: '📈 Metrics',
+    navOpp: '💡 Opportunities',
+    navDist: '📊 Distribution',
+    navKeywords: '🔍 Keywords',
+    kpiSection: 'Key Positioning Metrics',
+    kpiInfoTitle: 'What are these metrics?',
+    kpiInfoDesc1: 'These metrics show how many keywords are ranked in the most valuable Google positions. Top positions generate exponentially more traffic than lower positions.',
+    kpiInfoDesc2: 'What to consider:',
+    kpiInfoDesc2b: ' A healthy portfolio should have at least 20-30% of keywords in TOP 10. If you have many keywords in positions 11-20, there are clear improvement opportunities with little effort.',
+    top3Label: '🥇 Keywords in TOP 3',
+    top3Sub: 'Positions 1-3',
+    top5Label: '🥈 Keywords in TOP 5',
+    top5Sub: 'Positions 1-5',
+    top10Label: '🥉 Keywords in TOP 10',
+    top10Sub: 'Positions 1-10',
+    totalLabel: '📈 Total Keywords',
+    totalSub: 'Being tracked',
+    statsSection: 'Performance Indicators',
+    statsInfoTitle: 'How to interpret these numbers?',
+    statsInfoDesc1: 'Average Position:',
+    statsInfoDesc1b: ' Indicates your overall visibility. Ideally should be less than 15. If greater than 20, you need a more aggressive content strategy.',
+    statsInfoDesc2: 'Keywords on First Page:',
+    statsInfoDesc2b: ' Only the first page of Google generates significant traffic. This number should grow month over month.',
+    statsInfoDesc3: 'Total Volume (TOP 10):',
+    statsInfoDesc3b: ' Represents the monthly traffic potential of your best-ranked keywords. This is the "earned" traffic from your SEO strategy.',
+    avgPosLabel: 'Average Position',
+    bestPosLabel: 'Best Position',
+    firstPageLabel: 'Keywords on First Page',
+    volumeTop10Label: 'Total Volume (TOP 10)',
+    oppSection: 'Opportunities Near TOP 10',
+    oppInfoTitle: '🎯 Your priority action list',
+    oppInfoDesc1: 'These keywords are only 1-5 positions away from entering TOP 10. They are the highest return opportunities with the least effort.',
+    oppInfoDesc2: 'Recommended action:',
+    oppInfoDesc2b: ' Optimize the content of these URLs, improve internal links to them, and consider updating content to make it more complete than immediate competition.',
+    oppInfoDesc3: 'Expected impact:',
+    oppInfoDesc3b: ' Improving these positions can increase organic traffic by 30-50% in 2-3 months.',
+    oppDesc: 'Keywords in positions 11-15 that with a little effort can enter TOP 10',
+    oppTablePos: 'Position',
+    oppTableKw: 'Keyword',
+    oppTableVol: 'Volume',
+    oppTableDiff: 'Distance to TOP 10',
+    oppTableDiffVal: 'positions',
+    distSection: 'Position Distribution',
+    distInfoTitle: 'What does this chart tell you?',
+    distInfoDesc1: 'Shows how your keywords are distributed across different position ranges. A healthy SEO strategy should show a "pyramid" distribution with more keywords in top positions.',
+    distInfoDesc2: 'What to look for:',
+    distInfoDesc2b: ' If most of your keywords are in positions 21+, you need to improve site authority and content quality. If you have many in 11-20, you\'re close to significant results with targeted optimizations.',
+    distInfoDesc3: 'Goal:',
+    distInfoDesc3b: ' Month over month, you should see more keywords moving to the left of the chart (better positions).',
+    kwSection: 'All Keywords by Position',
+    kwInfoTitle: 'How to use this table',
+    kwInfoDesc1: 'Complete list of all keywords sorted by current position. Colors indicate visibility level:',
+    kwInfoDesc2: '🥇 Gold (TOP 3):',
+    kwInfoDesc2b: ' High-value keywords. Protect these positions with updated content and quality links.',
+    kwInfoDesc3: '🥈 Purple (TOP 5):',
+    kwInfoDesc3b: ' Excellent visibility. Small improvements can take them to the podium.',
+    kwInfoDesc4: '🥉 Green (TOP 10):',
+    kwInfoDesc4b: ' First page of Google. Monitor competition and keep content relevant.',
+    kwInfoDesc5: 'Action:',
+    kwInfoDesc5b: ' Export this data monthly to track changes and prioritize optimizations.',
+    kwTablePos: 'Position',
+    kwTableKw: 'Keyword',
+    kwTableVol: 'Volume',
+    kwTableTraffic: 'Estimated Traffic',
+    kwTableUrl: 'URL',
+    showAll: 'View all',
+    showAllOpp: 'opportunities',
+    showAllKw: 'keywords',
+    chartLabel: 'Number of Keywords'
+  },
+  pt: {
+    title: 'Dashboard de Posições SEO',
+    subtitle: 'Análise de posicionamento no Google',
+    themeLabel: 'Tema:',
+    fontLabel: 'Fonte:',
+    langLabel: 'Idioma:',
+    themes: {
+      default: 'Azul Corporativo',
+      gray: 'Cinza Profissional',
+      finance: 'Verde Financeiro',
+      executive: 'Roxo Executivo',
+      dark: 'Escuro Tech'
+    },
+    emptyTitle: 'Arraste seu arquivo aqui ou clique para carregar',
+    emptyDesc: 'Suporta arquivos CSV e Excel com dados de palavras-chave e posições',
+    selectFile: 'Selecionar arquivo',
+    errorCsv: 'Erro ao ler o arquivo CSV',
+    errorExcel: 'Erro ao ler o arquivo Excel',
+    errorFormat: 'Formato de arquivo não suportado. Por favor, carregue um arquivo CSV ou Excel.',
+    errorNoData: 'Nenhum dado válido encontrado no arquivo. Verifique se ele possui as colunas corretas.',
+    navKpis: '📊 KPIs',
+    navStats: '📈 Indicadores',
+    navOpp: '💡 Oportunidades',
+    navDist: '📊 Distribuição',
+    navKeywords: '🔍 Palavras-chave',
+    kpiSection: 'Métricas Principais de Posicionamento',
+    kpiInfoTitle: 'O que são essas métricas?',
+    kpiInfoDesc1: 'Essas métricas mostram quantas palavras-chave estão posicionadas nas faixas mais valiosas do Google. As primeiras posições geram exponencialmente mais tráfego do que as posições inferiores.',
+    kpiInfoDesc2: 'O que considerar:',
+    kpiInfoDesc2b: ' Um portfólio saudável deve ter pelo menos 20-30% das palavras-chave no TOP 10. Se você tem muitas palavras-chave nas posições 11-20, há oportunidades claras de melhoria com pouco esforço.',
+    top3Label: '🥇 Palavras-chave no TOP 3',
+    top3Sub: 'Posições 1-3',
+    top5Label: '🥈 Palavras-chave no TOP 5',
+    top5Sub: 'Posições 1-5',
+    top10Label: '🥉 Palavras-chave no TOP 10',
+    top10Sub: 'Posições 1-10',
+    totalLabel: '📈 Total de Palavras-chave',
+    totalSub: 'Em monitoramento',
+    statsSection: 'Indicadores de Desempenho',
+    statsInfoTitle: 'Como interpretar esses números?',
+    statsInfoDesc1: 'Posição Média:',
+    statsInfoDesc1b: ' Indica sua visibilidade geral. Idealmente deve ser menor que 15. Se for maior que 20, você precisa de uma estratégia de conteúdo mais agressiva.',
+    statsInfoDesc2: 'Palavras-chave na Primeira Página:',
+    statsInfoDesc2b: ' Apenas a primeira página do Google gera tráfego significativo. Este número deve crescer mês a mês.',
+    statsInfoDesc3: 'Volume Total (TOP 10):',
+    statsInfoDesc3b: ' Representa o potencial de tráfego mensal de suas palavras-chave melhor posicionadas. Este é o tráfego "conquistado" de sua estratégia SEO.',
+    avgPosLabel: 'Posição Média',
+    bestPosLabel: 'Melhor Posição',
+    firstPageLabel: 'Palavras-chave na Primeira Página',
+    volumeTop10Label: 'Volume Total (TOP 10)',
+    oppSection: 'Oportunidades Próximas ao TOP 10',
+    oppInfoTitle: '🎯 Sua lista de ação prioritária',
+    oppInfoDesc1: 'Essas palavras-chave estão a apenas 1-5 posições de entrar no TOP 10. São as oportunidades de maior retorno com menor esforço.',
+    oppInfoDesc2: 'Ação recomendada:',
+    oppInfoDesc2b: ' Otimize o conteúdo dessas URLs, melhore os links internos para elas e considere atualizar o conteúdo para torná-lo mais completo do que a concorrência imediata.',
+    oppInfoDesc3: 'Impacto esperado:',
+    oppInfoDesc3b: ' Melhorar essas posições pode aumentar o tráfego orgânico entre 30-50% em 2-3 meses.',
+    oppDesc: 'Palavras-chave nas posições 11-15 que com um pouco de esforço podem entrar no TOP 10',
+    oppTablePos: 'Posição',
+    oppTableKw: 'Palavra-chave',
+    oppTableVol: 'Volume',
+    oppTableDiff: 'Diferença para o TOP 10',
+    oppTableDiffVal: 'posições',
+    distSection: 'Distribuição de Posições',
+    distInfoTitle: 'O que este gráfico lhe diz?',
+    distInfoDesc1: 'Mostra como suas palavras-chave estão distribuídas em diferentes faixas de posição. Uma estratégia SEO saudável deve mostrar uma distribuição tipo "pirâmide" com mais palavras-chave em posições altas.',
+    distInfoDesc2: 'O que procurar:',
+    distInfoDesc2b: ' Se a maioria de suas palavras-chave está em posições 21+, você precisa melhorar a autoridade do site e a qualidade do conteúdo. Se você tem muitas em 11-20, está perto de resultados significativos com otimizações pontuais.',
+    distInfoDesc3: 'Objetivo:',
+    distInfoDesc3b: ' Mês a mês, você deve ver mais palavras-chave se movendo para a esquerda do gráfico (melhores posições).',
+    kwSection: 'Todas as Palavras-chave por Posição',
+    kwInfoTitle: 'Como usar esta tabela',
+    kwInfoDesc1: 'Lista completa de todas as palavras-chave ordenadas por posição atual. As cores indicam o nível de visibilidade:',
+    kwInfoDesc2: '🥇 Dourado (TOP 3):',
+    kwInfoDesc2b: ' Palavras-chave de alto valor. Proteja essas posições com conteúdo atualizado e links de qualidade.',
+    kwInfoDesc3: '🥈 Roxo (TOP 5):',
+    kwInfoDesc3b: ' Excelente visibilidade. Pequenas melhorias podem levá-las ao pódio.',
+    kwInfoDesc4: '🥉 Verde (TOP 10):',
+    kwInfoDesc4b: ' Primeira página do Google. Monitore a concorrência e mantenha o conteúdo relevante.',
+    kwInfoDesc5: 'Ação:',
+    kwInfoDesc5b: ' Exporte esses dados mensalmente para rastrear mudanças e priorizar otimizações.',
+    kwTablePos: 'Posição',
+    kwTableKw: 'Palavra-chave',
+    kwTableVol: 'Volume',
+    kwTableTraffic: 'Tráfego Estimado',
+    kwTableUrl: 'URL',
+    showAll: 'Ver todas as',
+    showAllOpp: 'oportunidades',
+    showAllKw: 'palavras-chave',
+    chartLabel: 'Quantidade de Palavras-chave'
+  }
+};
+
+// Language management
+function changeLang(lang) {
+  currentLang = lang;
+  const t = translations[lang];
+  
+  // Update select value
+  const langSelect = document.getElementById('langSelect');
+  if (langSelect) {
+    langSelect.value = lang;
+  }
+  
+  // Update all text content
+  document.querySelector('.title span:not(.emoji)').textContent = t.title;
+  document.querySelector('.subtitle').textContent = t.subtitle;
+  
+  // Update theme dropdown options
+  const themeSelect = document.getElementById('themeSelect');
+  if (themeSelect) {
+    themeSelect.options[0].text = t.themes.default;
+    themeSelect.options[1].text = t.themes.gray;
+    themeSelect.options[2].text = t.themes.finance;
+    themeSelect.options[3].text = t.themes.executive;
+    themeSelect.options[4].text = t.themes.dark;
+  }
+  
+  // Save preference
+  localStorage.setItem('dashboard-lang', lang);
+  
+  // Re-render content if data exists
+  if (globalData.length > 0) {
+    updateAllSections();
+  } else {
+    updateEmptyState();
+  }
+}
+
+function updateEmptyState() {
+  const t = translations[currentLang];
+  const emptyState = document.getElementById('emptyState');
+  if (emptyState && !emptyState.classList.contains('hidden')) {
+    emptyState.querySelector('h3').textContent = t.emptyTitle;
+    emptyState.querySelector('p').textContent = t.emptyDesc;
+    emptyState.querySelector('.btn span:last-child').textContent = t.selectFile;
+  }
+}
+
+function updateAllSections() {
+  const t = translations[currentLang];
+  
+  // Update nav
+  const navLinks = document.querySelectorAll('.nav-link');
+  if (navLinks.length > 0) {
+    navLinks[0].textContent = t.navKpis;
+    navLinks[1].textContent = t.navStats;
+    navLinks[2].textContent = t.navOpp;
+    navLinks[3].textContent = t.navDist;
+    navLinks[4].textContent = t.navKeywords;
+  }
+  
+  // Update section titles and info boxes
+  updateKPISection();
+  updateStatsSection();
+  updateOpportunitiesSection();
+  updateDistributionSection();
+  updateKeywordsSection();
+  
+  // Re-render visualizations
+  updateKPIs();
+  updateStatsGrid();
+  updateOpportunities();
+  updateDistributionChart();
+  updateTable();
+}
+
+function updateKPISection() {
+  const t = translations[currentLang];
+  document.querySelector('#kpis .section-title span:not(.emoji)').textContent = t.kpiSection;
+  document.querySelector('#kpiInfo h6').textContent = t.kpiInfoTitle;
+  const kpiInfoPs = document.querySelectorAll('#kpiInfo p');
+  kpiInfoPs[0].textContent = t.kpiInfoDesc1;
+  kpiInfoPs[1].innerHTML = `<strong>${t.kpiInfoDesc2}</strong>${t.kpiInfoDesc2b}`;
+  
+  document.querySelectorAll('.kpi h5')[0].textContent = t.top3Label;
+  document.querySelectorAll('.kpi .label')[0].textContent = t.top3Sub;
+  document.querySelectorAll('.kpi h5')[1].textContent = t.top5Label;
+  document.querySelectorAll('.kpi .label')[1].textContent = t.top5Sub;
+  document.querySelectorAll('.kpi h5')[2].textContent = t.top10Label;
+  document.querySelectorAll('.kpi .label')[2].textContent = t.top10Sub;
+  document.querySelectorAll('.kpi h5')[3].textContent = t.totalLabel;
+  document.querySelectorAll('.kpi .label')[3].textContent = t.totalSub;
+}
+
+function updateStatsSection() {
+  const t = translations[currentLang];
+  document.querySelector('#stats .section-title span:not(.emoji)').textContent = t.statsSection;
+  document.querySelector('#statsInfo h6').textContent = t.statsInfoTitle;
+  const statsInfoPs = document.querySelectorAll('#statsInfo p');
+  statsInfoPs[0].innerHTML = `<strong>${t.statsInfoDesc1}</strong>${t.statsInfoDesc1b}`;
+  statsInfoPs[1].innerHTML = `<strong>${t.statsInfoDesc2}</strong>${t.statsInfoDesc2b}`;
+  statsInfoPs[2].innerHTML = `<strong>${t.statsInfoDesc3}</strong>${t.statsInfoDesc3b}`;
+  
+  document.querySelectorAll('.stat-card .label')[0].textContent = t.avgPosLabel;
+  document.querySelectorAll('.stat-card .label')[1].textContent = t.bestPosLabel;
+  document.querySelectorAll('.stat-card .label')[2].textContent = t.firstPageLabel;
+  document.querySelectorAll('.stat-card .label')[3].textContent = t.volumeTop10Label;
+}
+
+function updateOpportunitiesSection() {
+  const t = translations[currentLang];
+  const oppSection = document.querySelector('#opportunities .section-title span:not(.emoji)');
+  if (oppSection) {
+    oppSection.textContent = t.oppSection;
+  }
+  const oppInfo = document.querySelector('#oppInfo h6');
+  if (oppInfo) {
+    oppInfo.textContent = t.oppInfoTitle;
+    const oppInfoPs = document.querySelectorAll('#oppInfo p');
+    oppInfoPs[0].innerHTML = `${t.oppInfoDesc1.replace('mayor retorno con menor esfuerzo', `<strong>${t.oppInfoDesc1.match(/mayor retorno con menor esfuerzo|highest return.*least effort|maior retorno com menor esforço/)?.[0] || 'mayor retorno con menor esfuerzo'}</strong>`)}`;
+    oppInfoPs[1].innerHTML = `<strong>${t.oppInfoDesc2}</strong>${t.oppInfoDesc2b}`;
+    oppInfoPs[2].innerHTML = `<strong>${t.oppInfoDesc3}</strong>${t.oppInfoDesc3b}`;
+  }
+}
+
+function updateDistributionSection() {
+  const t = translations[currentLang];
+  document.querySelector('#distribution .section-title span:not(.emoji)').textContent = t.distSection;
+  document.querySelector('#chartInfo h6').textContent = t.distInfoTitle;
+  const chartInfoPs = document.querySelectorAll('#chartInfo p');
+  chartInfoPs[0].textContent = t.distInfoDesc1;
+  chartInfoPs[1].innerHTML = `<strong>${t.distInfoDesc2}</strong>${t.distInfoDesc2b}`;
+  chartInfoPs[2].innerHTML = `<strong>${t.distInfoDesc3}</strong>${t.distInfoDesc3b}`;
+}
+
+function updateKeywordsSection() {
+  const t = translations[currentLang];
+  document.querySelector('#keywords .section-title span:not(.emoji)').textContent = t.kwSection;
+  document.querySelector('#tableInfo h6').textContent = t.kwInfoTitle;
+  const tableInfoPs = document.querySelectorAll('#tableInfo p');
+  tableInfoPs[0].textContent = t.kwInfoDesc1;
+  tableInfoPs[1].innerHTML = `<strong>${t.kwInfoDesc2}</strong>${t.kwInfoDesc2b}`;
+  tableInfoPs[2].innerHTML = `<strong>${t.kwInfoDesc3}</strong>${t.kwInfoDesc3b}`;
+  tableInfoPs[3].innerHTML = `<strong>${t.kwInfoDesc4}</strong>${t.kwInfoDesc4b}`;
+  tableInfoPs[4].innerHTML = `<strong>${t.kwInfoDesc5}</strong>${t.kwInfoDesc5b}`;
+}
 
 // Theme management
 function changeTheme(theme) {
@@ -432,9 +867,11 @@ function changeTheme(theme) {
 window.addEventListener('DOMContentLoaded', function() {
   const savedTheme = localStorage.getItem('dashboard-theme') || 'default';
   const savedFont = localStorage.getItem('dashboard-font') || 'inter';
+  const savedLang = localStorage.getItem('dashboard-lang') || 'es';
   
   changeTheme(savedTheme);
   changeFont(savedFont);
+  changeLang(savedLang);
 });
 
 // Font management
@@ -487,35 +924,44 @@ function toggleInfo(id) {
 // File input handler
 document.getElementById('fileInput').addEventListener('change', handleFileUpload);
 
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (file) {
+    handleFile(file);
+  }
+}
+
 // Drag and drop for empty state
 const emptyState = document.getElementById('emptyState');
 
-emptyState.addEventListener('click', function() {
-  document.getElementById('fileInput').click();
-});
+if (emptyState) {
+  emptyState.addEventListener('click', function() {
+    document.getElementById('fileInput').click();
+  });
 
-emptyState.addEventListener('dragover', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  emptyState.classList.add('drag-over');
-});
+  emptyState.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    emptyState.classList.add('drag-over');
+  });
 
-emptyState.addEventListener('dragleave', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  emptyState.classList.remove('drag-over');
-});
+  emptyState.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    emptyState.classList.remove('drag-over');
+  });
 
-emptyState.addEventListener('drop', function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  emptyState.classList.remove('drag-over');
-  
-  const files = e.dataTransfer.files;
-  if (files.length > 0) {
-    handleFile(files[0]);
-  }
-});
+  emptyState.addEventListener('drop', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    emptyState.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFile(files[0]);
+    }
+  });
+}
 
 function handleFileUpload(e) {
   const file = e.target.files[0];
@@ -556,6 +1002,7 @@ function handleFile(file) {
 }
 
 function processData(data) {
+  const t = translations[currentLang];
   // Clean and prepare data
   globalData = data
     .map(row => {
@@ -578,7 +1025,7 @@ function processData(data) {
     .sort((a, b) => a.position - b.position);
 
   if (globalData.length === 0) {
-    alert('No se encontraron datos válidos en el archivo. Verifica que tenga las columnas correctas.');
+    alert(t.errorNoData);
     return;
   }
 
@@ -587,11 +1034,7 @@ function processData(data) {
   document.getElementById('mainContent').classList.remove('hidden');
 
   // Update all visualizations
-  updateKPIs();
-  updateStatsGrid();
-  updateOpportunities();
-  updateDistributionChart();
-  updateTable();
+  updateAllSections();
 }
 
 function updateKPIs() {
@@ -627,6 +1070,7 @@ function updateStatsGrid() {
 }
 
 function updateOpportunities() {
+  const t = translations[currentLang];
   const opportunities = globalData.filter(k => k.position >= 11 && k.position <= 15);
   
   if (opportunities.length === 0) {
@@ -643,10 +1087,10 @@ function updateOpportunities() {
     <table class="table">
       <thead>
         <tr>
-          <th>Posición</th>
-          <th>Keyword</th>
-          <th>Volumen</th>
-          <th>Diferencia al TOP 10</th>
+          <th>${t.oppTablePos}</th>
+          <th>${t.oppTableKw}</th>
+          <th>${t.oppTableVol}</th>
+          <th>${t.oppTableDiff}</th>
         </tr>
       </thead>
       <tbody id="oppTableBody">
@@ -655,12 +1099,12 @@ function updateOpportunities() {
             <td><span class="position-badge">${k.position}</span></td>
             <td class="keyword-cell">${k.keyword}</td>
             <td>${formatNumber(k.volume)}</td>
-            <td style="font-weight: 700; color: var(--yellow)">-${k.position - 10} posiciones</td>
+            <td style="font-weight: 700; color: var(--yellow)">-${k.position - 10} ${t.oppTableDiffVal}</td>
           </tr>
         `).join('')}
       </tbody>
     </table>
-    ${!showAll ? `<button class="show-more-btn" onclick="showAllRows('oppTableBody', ${opportunities.length})">Ver todas las ${opportunities.length} oportunidades ▼</button>` : ''}
+    ${!showAll ? `<button class="show-more-btn" onclick="showAllRows('oppTableBody', ${opportunities.length})">${t.showAll} ${opportunities.length} ${t.showAllOpp} ▼</button>` : ''}
   `;
   
   document.getElementById('opportunitiesList').innerHTML = html;
@@ -770,10 +1214,21 @@ function updateDistributionChart() {
 }
 
 function updateTable() {
+  const t = translations[currentLang];
   const tbody = document.getElementById('tableBody');
   const showMoreContainer = document.getElementById('showMoreKeywords');
   const limitRows = 10;
   const showAll = globalData.length <= limitRows;
+  
+  // Update table headers
+  const tableHeaders = document.querySelectorAll('#keywordsTable thead th');
+  if (tableHeaders.length > 0) {
+    tableHeaders[0].textContent = t.kwTablePos;
+    tableHeaders[1].textContent = t.kwTableKw;
+    tableHeaders[2].textContent = t.kwTableVol;
+    tableHeaders[3].textContent = t.kwTableTraffic;
+    tableHeaders[4].textContent = t.kwTableUrl;
+  }
   
   const html = globalData.map((k, index) => {
     let rowClass = '';
@@ -805,7 +1260,7 @@ function updateTable() {
   
   // Add "Show more" button if needed
   if (!showAll) {
-    showMoreContainer.innerHTML = `<button class="show-more-btn" onclick="showAllRows('tableBody', ${globalData.length})">Ver todas las ${globalData.length} keywords ▼</button>`;
+    showMoreContainer.innerHTML = `<button class="show-more-btn" onclick="showAllRows('tableBody', ${globalData.length})">${t.showAll} ${globalData.length} ${t.showAllKw} ▼</button>`;
   } else {
     showMoreContainer.innerHTML = '';
   }
